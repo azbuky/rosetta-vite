@@ -1,0 +1,80 @@
+{
+    "network": {
+        "blockchain": "vite",
+        "network": "testnet"
+    },
+    "online_url": "http://localhost:8080",
+    "data_directory": "cli-data",
+    "http_timeout": 3000,
+    "max_retries": 15,
+    "retry_elapsed_time": 10,
+    "max_online_connections": 90,
+    "max_sync_concurrency": 16,
+    "tip_delay": 300,
+    "max_reorg_depth": 100,
+    "log_configuration": false,
+    "compression_disabled": false,
+    "memory_limit_disabled": false,
+    "construction": {
+        "prefunded_accounts": [
+            {
+                "account_identifier": {
+                    "address": "vite_30d700502501c5f2052c620333b335ed74fe6ccd4498d4920f"
+                },
+                "privkey": "abe4faf46d985feebf8ffb5d49db4901b497d990f9264173acced6dc55fea1c3",
+                "curve_type": "edwards25519",
+                "currency": {
+                    "symbol": "VITE",
+                    "decimals": 18,
+                    "metadata": {
+                        "tti": "tti_5649544520544f4b454e6e40"
+                    }
+                }
+            },
+            {
+                "account_identifier": {
+                    "address": "vite_5ee5dbac03ce211ff7153a896f01153a0a73f98ae2a3dcfcf7"
+                },
+                "privkey": "fa94200cb55240ec55901805de969e8fc9011178ba8024fd2c7d17c014d2fc67",
+                "curve_type": "edwards25519",
+                "currency": {
+                    "symbol": "VITE",
+                    "decimals": 18,
+                    "metadata": {
+                        "tti": "tti_5649544520544f4b454e6e40"
+                    }
+                }
+            }
+        ],
+        "broadcast_limit": 1,
+        "constructor_dsl_file": "vite.ros",
+        "end_conditions": {
+            "transfer_vite": 10
+        }
+    },
+    "data": {
+        "active_reconciliation_concurrency": 32,
+        "inactive_reconciliation_concurrency": 4,
+        "inactive_reconciliation_frequency": 10008,
+        "log_blocks": true,
+        "log_transactions": true,
+        "log_balance_changes": true,
+        "log_reconciliations": true,
+        "ignore_reconciliation_error": false,
+        "exempt_accounts": "",
+        "interesting_accounts": "",
+        "reconciliation_disabled": false,
+        "reconciliation_drain_disabled": false,
+        "inactive_discrepency_search_disabled": false,
+        "balance_tracking_disabled": false,
+        "coin_tracking_disabled": false,
+        "status_port": 9090,
+        "results_output_file": "results.log",
+        "pruning_disabled": true,
+        "initial_balance_fetch_disabled": false,
+        "start_index": 2,
+        "end_conditions": {
+            "index": 10000
+        }
+    }
+}

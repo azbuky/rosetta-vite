@@ -1,0 +1,38 @@
+{
+  "Identity": "foobar",
+  "ListenInterface": "0.0.0.0",
+  "Port": 8483,
+  "FilePort": 8484,
+  "MaxPeers": 10,
+  "MinPeers": 5,
+  "MaxInboundRatio": 2,
+  "MaxPendingPeers": 5,
+  "BootSeeds": [
+    "https://bootnodes.vite.net/bootmainnet.json"
+  ],
+  "Discover": true,
+  "RPCEnabled": true,
+  "HttpHost": "0.0.0.0",
+  "HttpPort": 48132,
+  "WSEnabled": false,
+  "WSHost": "0.0.0.0",
+  "WSPort": 41420,
+  "HttpVirtualHosts": [],
+  "IPCEnabled": true,
+  "PublicModules": [
+    "ledger",
+    "net",
+    "contract",
+    "util",
+    "debug",
+    "sbpstats",
+    "dashboard"
+  ],
+  "Miner": false,
+  "CoinBase": "",
+  "EntropyStorePath": "",
+  "EntropyStorePassword": "",
+  "LogLevel": "info",
+  "DashboardTargetURL": "wss://stats.vite.net",
+  "RewardAddr": "vite_xxxxxxxxxxxxxxxxxx"
+}

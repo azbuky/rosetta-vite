@@ -1,0 +1,73 @@
+transfer_vite(10){
+  request{
+    request.network = {"network":"testnet", "blockchain":"vite"};
+    request.confirmation_depth = "5";
+    currency = {"symbol":"VITE", "decimals":18, "metadata" : {"tti" : "tti_5649544520544f4b454e6e40"}};
+    sender = find_balance({
+      "minimum_balance":{
+        "value": "1000000000000000000",
+        "currency": {{currency}}
+      }
+    });
+
+    available_amount = {{sender.balance.value}};
+    recipient_amount = "1000000000000000000";
+    print_message({"recipient_amount":{{recipient_amount}}});
+
+    // Find recipient and construct operations
+    sender_amount = 0 - {{recipient_amount}};
+    recipient = find_balance({
+      "not_account_identifier":[{{sender.account_identifier}}],
+      "minimum_balance":{
+        "value": "0",
+        "currency": {{currency}}
+      }
+    });
+    request.operations = [
+      {
+        "operation_identifier":{"index":0},
+        "type":"REQUEST",
+        "account":{{sender.account_identifier}},
+        "amount":{
+          "value":{{sender_amount}},
+          "currency":{{currency}}
+        }
+      },
+      {
+        "operation_identifier":{"index":1},
+        "type":"REQUEST",
+        "account":{{recipient.account_identifier}},
+        "amount":{
+          "value":"0",
+          "currency":{{currency}}
+        }
+      }
+    ];
+    request.preprocess_metadata = {"use_pow": "true"};
+  },
+  response{
+    response.network = {"network":"testnet", "blockchain":"vite"};
+    response.confirmation_depth = "5";
+    response.operations = [
+      {
+        "operation_identifier":{"index":0},
+        "type":"RESPONSE",
+        "account":{{sender.account_identifier}},
+        "amount":{
+          "value":"0",
+          "currency":{{currency}}
+        }
+      },
+      {
+        "operation_identifier":{"index":1},
+        "type":"RESPONSE",
+        "account":{{recipient.account_identifier}},
+        "amount":{
+          "value":{{recipient_amount}},
+          "currency":{{currency}}
+        }
+      }
+    ];
+    response.preprocess_metadata = {"use_pow": "true"};
+  }
+}
