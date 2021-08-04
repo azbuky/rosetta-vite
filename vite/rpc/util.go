@@ -19,8 +19,8 @@ func NewUtilApi(cc *rpc.Client) UtilApi {
 }
 
 func (ui utilApi) GetPoWNonce(
-	ctx context.Context, 
-	difficulty string, 
+	ctx context.Context,
+	difficulty string,
 	hash string,
 ) (nonce string, err error) {
 	err = ui.cc.CallContext(ctx, &nonce, "util_getPoWNonce", difficulty, hash)

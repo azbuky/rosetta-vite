@@ -13,17 +13,17 @@ import (
 )
 
 type genesis struct {
-	GenesisAccountAddress 	string 					   	`json:"GenesisAccountAddress"`
-	ForkPoints				[]interface{}				`json:"ForkPoints"`
-	GovernanceInfo			map[string]interface{}		`json:"GovernanceInfo"`
-	AssetInfo       		assetInfo                  	`json:"AssetInfo"`
-	QuotaInfo 				map[string]interface{}		`json:"QuotaInfo"`
-	AccountBalanceMap 		map[string]accountBalances 	`json:"AccountBalanceMap"`
+	GenesisAccountAddress string                     `json:"GenesisAccountAddress"`
+	ForkPoints            []interface{}              `json:"ForkPoints"`
+	GovernanceInfo        map[string]interface{}     `json:"GovernanceInfo"`
+	AssetInfo             assetInfo                  `json:"AssetInfo"`
+	QuotaInfo             map[string]interface{}     `json:"QuotaInfo"`
+	AccountBalanceMap     map[string]accountBalances `json:"AccountBalanceMap"`
 }
 
 type assetInfo struct {
-	TokenInfoMap 	map[string]config.TokenInfo `json:"TokenInfoMap"`
-	LogList			[]interface{} 				`json:"LogList"`
+	TokenInfoMap map[string]config.TokenInfo `json:"TokenInfoMap"`
+	LogList      []interface{}               `json:"LogList"`
 }
 
 type accountBalances map[string]big.Int
@@ -53,7 +53,7 @@ func GenerateBootstrapFile(genesisFile string, outputFile string) error {
 		if err != nil {
 			return fmt.Errorf("invalid address 0x%s", address)
 		}
-	
+
 		accountBalances := genesisAllocations.AccountBalanceMap[address]
 		for tti, value := range accountBalances {
 			// Skip zero balances
@@ -66,7 +66,7 @@ func GenerateBootstrapFile(genesisFile string, outputFile string) error {
 				Account: &types.AccountIdentifier{
 					Address: address,
 				},
-				Value: value.String(),
+				Value:    value.String(),
 				Currency: &currency,
 			})
 		}
@@ -80,7 +80,6 @@ func GenerateBootstrapFile(genesisFile string, outputFile string) error {
 		}
 		return first.Account.Address < second.Account.Address
 	})
-	
 
 	// Write to file
 	if err := utils.SerializeAndWrite(outputFile, balances); err != nil {

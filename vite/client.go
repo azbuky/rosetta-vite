@@ -175,7 +175,7 @@ func (ec *Client) Block(
 	parentIdentifier := currentIdentifier
 
 	// skip genesis transactions for optimisation purposes
-	
+
 	if currentIdentifier.Index != GenesisBlockIndex {
 		parentIdentifier = &types.BlockIdentifier{
 			Hash:  block.PreviousHash.Hex(),

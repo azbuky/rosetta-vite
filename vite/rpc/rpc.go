@@ -22,8 +22,8 @@ func NewRpcClient(rawurl string) (RpcClient, error) {
 	r := &rpcClient{
 		LedgerApi:   NewLedgerApi(c),
 		ContractApi: NewContractApi(c),
-		NetApi: 	 NewNetApi(c),
-		UtilApi: 	 NewUtilApi(c),
+		NetApi:      NewNetApi(c),
+		UtilApi:     NewUtilApi(c),
 		cc:          c,
 	}
 	return r, nil

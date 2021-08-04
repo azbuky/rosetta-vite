@@ -48,14 +48,14 @@ func MatchRequestTransaction(operations []*types.Operation) (*TransactionDescrip
 	// convert amount to positive value
 	amount := *fromOp.Amount
 	amount.Value = fromValue.Abs(fromValue).String()
-	
+
 	transaction := &TransactionDescription{
-		OperationType:  RequestOpType,
-		Account: 		*fromOp.Account,
-		FromAccount: 	*fromOp.Account,
-		ToAccount: 		*toOp.Account,
-		Amount: 		amount,
-		Fee:			fee,
+		OperationType: RequestOpType,
+		Account:       *fromOp.Account,
+		FromAccount:   *fromOp.Account,
+		ToAccount:     *toOp.Account,
+		Amount:        amount,
+		Fee:           fee,
 	}
 	return transaction, true
 }
@@ -74,13 +74,13 @@ func MatchResponseTransaction(operations []*types.Operation) (*TransactionDescri
 
 	fromOp, _ := matches[0].First()
 	toOp, _ := matches[1].First()
-	
+
 	transaction := &TransactionDescription{
-		OperationType:  opType,
-		Account: 		*toOp.Account,
-		FromAccount: 	*fromOp.Account,
-		ToAccount: 		*toOp.Account,
-		Amount: 		*toOp.Amount,
+		OperationType: opType,
+		Account:       *toOp.Account,
+		FromAccount:   *fromOp.Account,
+		ToAccount:     *toOp.Account,
+		Amount:        *toOp.Amount,
 	}
 	return transaction, true
 }
@@ -96,8 +96,8 @@ func MatchRequestOperationType(
 					Exists: true,
 				},
 				Amount: &parser.AmountDescription{
-					Exists:   true,
-					Sign:     parser.NegativeOrZeroAmountSign,
+					Exists: true,
+					Sign:   parser.NegativeOrZeroAmountSign,
 				},
 			},
 			{
@@ -106,7 +106,7 @@ func MatchRequestOperationType(
 					Exists: true,
 				},
 				Amount: &parser.AmountDescription{
-					Exists:   true,
+					Exists: true,
 				},
 			},
 		},
@@ -132,7 +132,7 @@ func MatchResponseOperationType(
 					Exists: true,
 				},
 				Amount: &parser.AmountDescription{
-					Exists:   true,
+					Exists: true,
 				},
 			},
 			{
@@ -141,8 +141,8 @@ func MatchResponseOperationType(
 					Exists: true,
 				},
 				Amount: &parser.AmountDescription{
-					Exists:   true,
-					Sign:     parser.PositiveOrZeroAmountSign,
+					Exists: true,
+					Sign:   parser.PositiveOrZeroAmountSign,
 				},
 			},
 		},
@@ -153,7 +153,7 @@ func MatchResponseOperationType(
 	if err != nil {
 		return nil, false
 	}
-	
+
 	return matches, true
 }
 
@@ -168,8 +168,8 @@ func MatchFeeOperationType(
 					Exists: true,
 				},
 				Amount: &parser.AmountDescription{
-					Exists:   true,
-					Sign: parser.NegativeAmountSign,
+					Exists: true,
+					Sign:   parser.NegativeAmountSign,
 				},
 			},
 		},
@@ -187,7 +187,7 @@ func MatchFeeOperationType(
 func ValidateMatches(matches []*parser.Match, opType *string) error {
 	fromOp, fromAmount := matches[0].First()
 	fromAddressStr := fromOp.Account.Address
-	
+
 	toOp, toAmount := matches[1].First()
 	toAddressStr := toOp.Account.Address
 
@@ -232,7 +232,7 @@ func ValidateMatches(matches []*parser.Match, opType *string) error {
 
 	if isSendType {
 		// Ensure destination amount is zero for send block types
-		if len(toAmount.Bits()) != 0  {
+		if len(toAmount.Bits()) != 0 {
 			return fmt.Errorf("%s is not zero", toAmount.String())
 		}
 	} else {
@@ -242,5 +242,5 @@ func ValidateMatches(matches []*parser.Match, opType *string) error {
 		}
 	}
 
-	return nil;
+	return nil
 }

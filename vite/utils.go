@@ -32,27 +32,43 @@ func IsReceiveTypeOperation(opType string) bool {
 
 func OperationTypeToBlockType(opType string) (byte, error) {
 	switch opType {
-	case CreateContractOpType: return ledger.BlockTypeSendCreate, nil
-	case RequestOpType: return ledger.BlockTypeSendCall, nil
-	case MintOpType: return ledger.BlockTypeSendReward, nil
-	case ResponseOpType: return ledger.BlockTypeReceive, nil
-	case ResponseFailOpType: return ledger.BlockTypeReceiveError, nil
-	case RefundOpType: return ledger.BlockTypeSendRefund, nil
-	case GenesisOpType: return ledger.BlockTypeGenesisReceive, nil
-	default: return 0, fmt.Errorf("unknown operation type %s", opType)
+	case CreateContractOpType:
+		return ledger.BlockTypeSendCreate, nil
+	case RequestOpType:
+		return ledger.BlockTypeSendCall, nil
+	case MintOpType:
+		return ledger.BlockTypeSendReward, nil
+	case ResponseOpType:
+		return ledger.BlockTypeReceive, nil
+	case ResponseFailOpType:
+		return ledger.BlockTypeReceiveError, nil
+	case RefundOpType:
+		return ledger.BlockTypeSendRefund, nil
+	case GenesisOpType:
+		return ledger.BlockTypeGenesisReceive, nil
+	default:
+		return 0, fmt.Errorf("unknown operation type %s", opType)
 	}
 }
 
 func BlockTypeToOperationType(blockType byte) (string, error) {
 	switch blockType {
-	case ledger.BlockTypeSendCreate: return CreateContractOpType, nil
-	case ledger.BlockTypeSendCall: return RequestOpType, nil
-	case ledger.BlockTypeSendReward: return MintOpType, nil
-	case ledger.BlockTypeReceive: return ResponseOpType, nil
-	case ledger.BlockTypeReceiveError: return ResponseFailOpType, nil
-	case ledger.BlockTypeSendRefund: return RefundOpType, nil
-	case ledger.BlockTypeGenesisReceive: return GenesisOpType, nil
-	default: return "", fmt.Errorf("unknown block type %d", blockType)
+	case ledger.BlockTypeSendCreate:
+		return CreateContractOpType, nil
+	case ledger.BlockTypeSendCall:
+		return RequestOpType, nil
+	case ledger.BlockTypeSendReward:
+		return MintOpType, nil
+	case ledger.BlockTypeReceive:
+		return ResponseOpType, nil
+	case ledger.BlockTypeReceiveError:
+		return ResponseFailOpType, nil
+	case ledger.BlockTypeSendRefund:
+		return RefundOpType, nil
+	case ledger.BlockTypeGenesisReceive:
+		return GenesisOpType, nil
+	default:
+		return "", fmt.Errorf("unknown block type %d", blockType)
 	}
 }
 
@@ -111,8 +127,8 @@ func OperationsForAccountBlock(account *api.AccountBlock, startIndex int64, incl
 	}
 
 	currency := CurrencyForAccountBlock(account)
-	zeroAmount :=  &types.Amount{
-		Value: "0",
+	zeroAmount := &types.Amount{
+		Value:    "0",
 		Currency: currency,
 	}
 
@@ -132,9 +148,9 @@ func OperationsForAccountBlock(account *api.AccountBlock, startIndex int64, incl
 		Account: &types.AccountIdentifier{
 			Address: account.FromAddress.Hex(),
 		},
-		Amount:   amount,
+		Amount: amount,
 	}
-	
+
 	toOp := &types.Operation{
 		OperationIdentifier: &types.OperationIdentifier{
 			Index: startIndex + 1,

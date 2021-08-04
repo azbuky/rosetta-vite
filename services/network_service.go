@@ -54,8 +54,8 @@ func (s *NetworkAPIService) NetworkOptions(
 			OperationStatuses:       vite.OperationStatuses,
 			HistoricalBalanceLookup: vite.HistoricalBalanceSupported,
 			CallMethods:             vite.CallMethods,
-			BalanceExemptions: 		 []*types.BalanceExemption{},
-			MempoolCoins: 			 false,
+			BalanceExemptions:       []*types.BalanceExemption{},
+			MempoolCoins:            false,
 		},
 	}, nil
 }
@@ -82,7 +82,7 @@ func (s *NetworkAPIService) NetworkStatus(
 		CurrentBlockIdentifier: currentBlock,
 		CurrentBlockTimestamp:  currentTime,
 		GenesisBlockIdentifier: s.client.GenesisBlockIdentifier(),
-		OldestBlockIdentifier: 	s.client.GenesisBlockIdentifier(),
+		OldestBlockIdentifier:  s.client.GenesisBlockIdentifier(),
 		SyncStatus:             syncStatus,
 		Peers:                  peers,
 	}, nil

@@ -34,13 +34,13 @@ const (
 	Decimals = 18
 
 	CreateContractOpType = "CREATE_CONTRACT"
-	RequestOpType = "REQUEST"
-	MintOpType = "MINT"
-	ResponseOpType = "RESPONSE"
-	ResponseFailOpType = "RESPONSE_FAIL"
-	RefundOpType = "REFUND"
-	GenesisOpType = "GENESIS"
-	FeeOpType = "FEE"
+	RequestOpType        = "REQUEST"
+	MintOpType           = "MINT"
+	ResponseOpType       = "RESPONSE"
+	ResponseFailOpType   = "RESPONSE_FAIL"
+	RefundOpType         = "REFUND"
+	GenesisOpType        = "GENESIS"
+	FeeOpType            = "FEE"
 
 	// SuccessStatus is the status of any
 	// operation considered successful.
@@ -103,7 +103,7 @@ var (
 			Successful: false,
 		},
 		{
-			Status: 	ExceedMaxDepthStatus,
+			Status:     ExceedMaxDepthStatus,
 			Successful: false,
 		},
 	}
@@ -114,20 +114,20 @@ var (
 
 // Defines construction preprocess options
 type ConstructionOptions struct {
-	AccountIdentifier  		types.AccountIdentifier `json:"account_identifier"`
-	FromAccount 			types.AccountIdentifier `json:"from_account"`
-	ToAccount				types.AccountIdentifier `json:"to_account"`
-	OperationType 			string					`json:"operation_type"`
-	Amount					types.Amount			`json:"amount"`
-	FetchPreviousBlock 		string                  `json:"fetch_previous_block"`
-	UsePow             		string                  `json:"use_pow"`
-	Data					*string					`json:"data,omitempty"`
+	AccountIdentifier  types.AccountIdentifier `json:"account_identifier"`
+	FromAccount        types.AccountIdentifier `json:"from_account"`
+	ToAccount          types.AccountIdentifier `json:"to_account"`
+	OperationType      string                  `json:"operation_type"`
+	Amount             types.Amount            `json:"amount"`
+	FetchPreviousBlock string                  `json:"fetch_previous_block"`
+	UsePow             string                  `json:"use_pow"`
+	Data               *string                 `json:"data,omitempty"`
 }
 
 // Defines construction metadata
 type ConstructionMetadata struct {
-	Height        uint64 `json:"height"`
-	PreviousHash  string `json:"previousHash"`
+	Height        uint64  `json:"height"`
+	PreviousHash  string  `json:"previousHash"`
 	Difficulty    *string `json:"difficulty,omitempty"`
 	Nonce         *string `json:"nonce,omitempty"`
 	SendBlockHash *string `json:"sendBlockHash,omitempty"`
@@ -136,11 +136,11 @@ type ConstructionMetadata struct {
 
 // Defines transaction description from matched operations
 type TransactionDescription struct {
-	OperationType 	string
-	Account			types.AccountIdentifier
-	FromAccount 	types.AccountIdentifier
-	ToAccount		types.AccountIdentifier
+	OperationType string
+	Account       types.AccountIdentifier
+	FromAccount   types.AccountIdentifier
+	ToAccount     types.AccountIdentifier
 	// Amount should always be positive
-	Amount 			types.Amount
-	Fee				*types.Amount
+	Amount types.Amount
+	Fee    *types.Amount
 }

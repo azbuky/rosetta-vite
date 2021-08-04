@@ -228,13 +228,13 @@ func (s *ConstructionAPIService) ConstructionParse(
 	}
 
 	metadata := map[string]interface{}{
-		"height": accountBlock.Height,
+		"height":       accountBlock.Height,
 		"previousHash": accountBlock.PrevHash,
-		"difficulty": accountBlock.Difficulty,
-		"nonce": accountBlock.Nonce,
-		"blockType": accountBlock.BlockType,
-		"fee": accountBlock.Fee,
-		"data": accountBlock.Data,
+		"difficulty":   accountBlock.Difficulty,
+		"nonce":        accountBlock.Nonce,
+		"blockType":    accountBlock.BlockType,
+		"fee":          accountBlock.Fee,
+		"data":         accountBlock.Data,
 	}
 	if ledger.IsReceiveBlock(accountBlock.BlockType) {
 		metadata["sendBlockHash"] = accountBlock.SendBlockHash

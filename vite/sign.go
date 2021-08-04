@@ -21,6 +21,6 @@ func SignData(privateKey string, message string) error {
 
 	signature := ed25519.Sign(privKey, data)
 	fmt.Println(hex.EncodeToString(signature))
-	
+
 	return nil
 }

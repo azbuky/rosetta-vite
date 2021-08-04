@@ -40,7 +40,7 @@ func (s *BlockAPIService) Block(
 	}
 
 	return &types.BlockResponse{
-		Block: block,
+		Block:             block,
 		OtherTransactions: transactions,
 	}, nil
 }

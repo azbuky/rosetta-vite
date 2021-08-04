@@ -68,14 +68,14 @@ const (
 
 // Configuration determines how
 type Configuration struct {
-	Mode                    Mode
-	Network                *types.NetworkIdentifier
+	Mode    Mode
+	Network *types.NetworkIdentifier
 	//GenesisBlockIdentifier *types.BlockIdentifier
-	GviteURL                string
-	RemoteGvite             bool
-	Port                    int
-	GviteArguments          string
-	InlineTransactions		bool
+	GviteURL           string
+	RemoteGvite        bool
+	Port               int
+	GviteArguments     string
+	InlineTransactions bool
 }
 
 // LoadConfiguration attempts to create a new Configuration

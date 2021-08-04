@@ -28,7 +28,7 @@ func (ni netApi) GetSyncInfo(ctx context.Context) (syncInfo *api.SyncInfo, err e
 }
 
 func (ni netApi) GetNodeInfo(ctx context.Context) (nodeInfo *net.NodeInfo, err error) {
-	nodeInfo = &net.NodeInfo{} 
+	nodeInfo = &net.NodeInfo{}
 	err = ni.cc.CallContext(ctx, nodeInfo, "net_nodeInfo")
 	return
 }
