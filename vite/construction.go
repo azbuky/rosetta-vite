@@ -82,21 +82,17 @@ func ConstructionPreprocess(
 	return options, requiredPublicKeys, nil
 }
 
-func (ec *Client) MatchSendBlock(ctx context.Context, options ConstructionOptions) (string, error) {
+func (ec *Client) MatchUnreceivedBlock(ctx context.Context, options ConstructionOptions) (string, error) {
 	address, err := viteTypes.HexToAddress(options.AccountIdentifier.Address)
 	if err != nil {
 		return "", err
 	}
 
-	pageIndex := uint64(0)
 	pageSize := uint64(10)
-	for {
+	for pageIndex := uint64(0); ; pageIndex += 1 {
 		blocks, err := ec.c.GetUnreceivedBlocksByAddress(ctx, address, pageIndex, pageSize)
 		if err != nil {
 			return "", err
-		}
-		if len(blocks) == 0 {
-			return "", fmt.Errorf("no match found")
 		}
 		for _, block := range blocks {
 			tx, err := AccountBlockToTransaction(block, false)
@@ -112,6 +108,7 @@ func (ec *Client) MatchSendBlock(ctx context.Context, options ConstructionOption
 			if err != nil {
 				continue
 			}
+
 			value, err := types.AmountValue(&options.Amount)
 			if err != nil {
 				continue
@@ -125,7 +122,11 @@ func (ec *Client) MatchSendBlock(ctx context.Context, options ConstructionOption
 				// found a match
 				return block.Hash.Hex(), nil
 			}
+		}
 
+		// check end of unreceived blocks
+		if uint64(len(blocks)) < pageSize {
+			return "", fmt.Errorf("no match found")
 		}
 	}
 }
@@ -159,7 +160,7 @@ func (ec *Client) ConstructionMetadata(
 	}
 
 	if IsReceiveTypeOperation(options.OperationType) {
-		sendBlockHash, err := ec.MatchSendBlock(ctx, *options)
+		sendBlockHash, err := ec.MatchUnreceivedBlock(ctx, *options)
 		if err != nil {
 			return nil, err
 		}
