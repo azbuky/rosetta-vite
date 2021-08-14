@@ -110,6 +110,12 @@ func AmountForAccountBlock(account *api.AccountBlock) *types.Amount {
 		value = "-" + value
 	}
 
+	// Do NOT credit amount from a receive transaction to mint address (token burn)
+	mintAddress := "vite_000000000000000000000000000000000000000595292d996d"
+	if ledger.IsReceiveBlock(account.BlockType) && account.ToAddress.Hex() == mintAddress {
+		value = "0"
+	}
+
 	currency := CurrencyForAccountBlock(account)
 
 	return &types.Amount{
