@@ -55,6 +55,9 @@ const (
 
 	ExceedMaxDepthStatus string = "EXCEED_MAX_DEPTH"
 
+	// Known addresses
+	MintAddress string = "vite_000000000000000000000000000000000000000595292d996d"
+
 	// HistoricalBalanceSupported is whether
 	// historical balance is supported.
 	HistoricalBalanceSupported = true
@@ -124,10 +127,9 @@ var (
 
 // Defines construction preprocess options
 type ConstructionOptions struct {
-	AccountIdentifier  types.AccountIdentifier `json:"account_identifier"`
-	FromAccount        types.AccountIdentifier `json:"from_account"`
-	ToAccount          types.AccountIdentifier `json:"to_account"`
 	OperationType      string                  `json:"operation_type"`
+	Account            types.AccountIdentifier `json:"account_identifier"`
+	ToAccount          types.AccountIdentifier `json:"to_account"`
 	Amount             types.Amount            `json:"amount"`
 	FetchPreviousBlock string                  `json:"fetch_previous_block"`
 	UsePow             string                  `json:"use_pow"`
@@ -136,21 +138,21 @@ type ConstructionOptions struct {
 
 // Defines construction metadata
 type ConstructionMetadata struct {
-	Height        uint64  `json:"height"`
-	PreviousHash  string  `json:"previousHash"`
-	Difficulty    *string `json:"difficulty,omitempty"`
-	Nonce         *string `json:"nonce,omitempty"`
-	SendBlockHash *string `json:"sendBlockHash,omitempty"`
-	Data          *string `json:"data,omitempty"`
+	Height       uint64  `json:"height"`
+	PreviousHash string  `json:"previousHash"`
+	Difficulty   *string `json:"difficulty,omitempty"`
+	Nonce        *string `json:"nonce,omitempty"`
 }
 
 // Defines transaction description from matched operations
 type TransactionDescription struct {
 	OperationType string
 	Account       types.AccountIdentifier
-	FromAccount   types.AccountIdentifier
+	FromAccount   *types.AccountIdentifier
 	ToAccount     types.AccountIdentifier
-	// Amount should always be positive
+	SendBlockHash *types.TransactionIdentifier
+	// Amount & Fee should always be positive
 	Amount types.Amount
 	Fee    *types.Amount
+	Data   *string
 }

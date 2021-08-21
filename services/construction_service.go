@@ -2,8 +2,6 @@ package services
 
 import (
 	"context"
-	"encoding/base64"
-	"encoding/json"
 	"fmt"
 
 	"github.com/azbuky/rosetta-vite/configuration"
@@ -13,7 +11,6 @@ import (
 	viteTypes "github.com/vitelabs/go-vite/common/types"
 	"github.com/vitelabs/go-vite/crypto/ed25519"
 	"github.com/vitelabs/go-vite/ledger"
-	"github.com/vitelabs/go-vite/rpcapi/api"
 )
 
 // ConstructionAPIService implements the server.ConstructionAPIServicer interface.
@@ -153,13 +150,8 @@ func (s *ConstructionAPIService) ConstructionCombine(
 	ctx context.Context,
 	request *types.ConstructionCombineRequest,
 ) (*types.ConstructionCombineResponse, *types.Error) {
-	var accountBlock api.AccountBlock
-	txData, err := base64.StdEncoding.DecodeString(request.UnsignedTransaction)
+	accountBlock, err := decodeAccountBlockFromBase64(request.UnsignedTransaction)
 	if err != nil {
-		return nil, wrapErr(ErrUnableToParseIntermediateResult, err)
-	}
-
-	if err := json.Unmarshal(txData, &accountBlock); err != nil {
 		return nil, wrapErr(ErrUnableToParseIntermediateResult, err)
 	}
 
@@ -182,7 +174,7 @@ func (s *ConstructionAPIService) ConstructionCombine(
 	accountBlock.PublicKey = signature.PublicKey.Bytes
 	accountBlock.Hash = *hash
 
-	signedTransaction, err := encodeAccountBlockToBase64(accountBlock)
+	signedTransaction, err := encodeAccountBlockToBase64(*accountBlock)
 	if err != nil {
 		return nil, wrapErr(ErrUnableToParseIntermediateResult, err)
 	}
@@ -222,7 +214,7 @@ func (s *ConstructionAPIService) ConstructionParse(
 		return nil, wrapErr(ErrUnableToParseIntermediateResult, err)
 	}
 
-	ops, err := vite.OperationsForAccountBlock(accountBlock, 0, false)
+	ops, err := vite.OperationsForAccountBlock(accountBlock, false)
 	if err != nil {
 		return nil, wrapErr(ErrUnableToParseIntermediateResult, err)
 	}

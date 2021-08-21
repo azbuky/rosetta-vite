@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/coinbase/rosetta-sdk-go/types"
-	viteTypes "github.com/vitelabs/go-vite/common/types"
 	"github.com/vitelabs/go-vite/ledger"
 	"github.com/vitelabs/go-vite/rpcapi/api"
 )
@@ -46,6 +45,8 @@ func OperationTypeToBlockType(opType string) (byte, error) {
 		return ledger.BlockTypeSendRefund, nil
 	case GenesisOpType:
 		return ledger.BlockTypeGenesisReceive, nil
+	case FeeOpType, BurnOpType:
+		return 0, fmt.Errorf("op %s does not map to a block type", opType)
 	default:
 		return 0, fmt.Errorf("unknown operation type %s", opType)
 	}
@@ -101,19 +102,13 @@ func CurrencyForAccountBlock(account *api.AccountBlock) *types.Currency {
 	}
 }
 
-func AmountForAccountBlock(account *api.AccountBlock) *types.Amount {
+func AmountForAccountBlock(account *api.AccountBlock, negateValue bool) *types.Amount {
 	value := "0"
 	if account.Amount != nil {
 		value = *account.Amount
 	}
-	if ledger.IsSendBlock(account.BlockType) && value != "0" {
+	if negateValue && value != "0" {
 		value = "-" + value
-	}
-
-	// Do NOT credit amount from a receive transaction to mint address (token burn)
-	mintAddress := "vite_000000000000000000000000000000000000000595292d996d"
-	if ledger.IsReceiveBlock(account.BlockType) && account.ToAddress.Hex() == mintAddress {
-		value = "0"
 	}
 
 	currency := CurrencyForAccountBlock(account)
@@ -124,138 +119,210 @@ func AmountForAccountBlock(account *api.AccountBlock) *types.Amount {
 	}
 }
 
-func OperationsForAccountBlock(account *api.AccountBlock, startIndex int64, includeStatus bool) ([]*types.Operation, error) {
-	ops := []*types.Operation{}
+func FeeAmountForAccountBlock(accountBlock *api.AccountBlock) *types.Amount {
+	if accountBlock.Fee == nil || *accountBlock.Fee == "0" {
+		return nil
+	}
 
-	opType, err := BlockTypeToOperationType(account.BlockType)
+	currency := CurrencyForAccountBlock(accountBlock)
+	return &types.Amount{
+		Value:    "-" + *accountBlock.Fee,
+		Currency: currency,
+	}
+}
+
+func StatusRef(status string, includeStatus bool) *string {
+	if !includeStatus {
+		return nil
+	}
+	return &status
+}
+
+func FromOperationForAccountBlock(accountBlock *api.AccountBlock, index int64, includeStatus bool) (*types.Operation, error) {
+	if !ledger.IsSendBlock(accountBlock.BlockType) {
+		return nil, fmt.Errorf("incorrect account block type")
+	}
+
+	opType, err := BlockTypeToOperationType(accountBlock.BlockType)
 	if err != nil {
 		return nil, err
 	}
 
-	currency := CurrencyForAccountBlock(account)
-	zeroAmount := &types.Amount{
-		Value:    "0",
-		Currency: currency,
+	amount := AmountForAccountBlock(accountBlock, true)
+	if opType == MintOpType {
+		amount = nil
 	}
 
-	amount := AmountForAccountBlock(account)
-	sStatus := SuccessStatus
-	var status *string
-	if includeStatus {
-		status = &sStatus
-	}
-
-	fromOp := &types.Operation{
+	return &types.Operation{
 		OperationIdentifier: &types.OperationIdentifier{
-			Index: startIndex,
+			Index: index,
+		},
+		Type:   opType,
+		Status: StatusRef(SuccessStatus, includeStatus),
+		Account: &types.AccountIdentifier{
+			Address: accountBlock.FromAddress.Hex(),
+		},
+		Amount: amount,
+	}, nil
+}
+
+func ToOperationForAccountBlock(accountBlock *api.AccountBlock, index int64, includeStatus bool) (*types.Operation, error) {
+	opType := ResponseOpType
+
+	amount := AmountForAccountBlock(accountBlock, false)
+
+	if accountBlock.ToAddress.Hex() == MintAddress {
+		opType = BurnOpType
+		amount = nil
+	}
+
+	status := StatusRef(SuccessStatus, includeStatus)
+	if ledger.IsSendBlock(accountBlock.BlockType) {
+		status = StatusRef(IntentStatus, includeStatus)
+	}
+
+	return &types.Operation{
+		OperationIdentifier: &types.OperationIdentifier{
+			Index: index,
 		},
 		Type:   opType,
 		Status: status,
 		Account: &types.AccountIdentifier{
-			Address: account.FromAddress.Hex(),
+			Address: accountBlock.ToAddress.Hex(),
 		},
 		Amount: amount,
+	}, nil
+}
+
+func FeeOperationForAccountBlock(accountBlock *api.AccountBlock, index int64, includeStatus bool) (*types.Operation, error) {
+	amount := FeeAmountForAccountBlock(accountBlock)
+	if amount == nil {
+		return nil, fmt.Errorf("could not create Fee operation, fee value is 0 or missing")
 	}
 
-	toOp := &types.Operation{
+	return &types.Operation{
 		OperationIdentifier: &types.OperationIdentifier{
-			Index: startIndex + 1,
+			Index: index,
 		},
-		RelatedOperations: []*types.OperationIdentifier{
-			{
-				Index: startIndex,
-			},
-		},
-		Type:   opType,
-		Status: status,
+		Type:   FeeOpType,
+		Status: StatusRef(SuccessStatus, includeStatus),
 		Account: &types.AccountIdentifier{
-			Address: account.ToAddress.Hex(),
+			Address: accountBlock.FromAddress.Hex(),
 		},
 		Amount: amount,
+	}, nil
+}
+
+func OperationsForRequestAccountBlock(accountBlock *api.AccountBlock, includeStatus bool) ([]*types.Operation, error) {
+	if !ledger.IsSendBlock(accountBlock.BlockType) {
+		return nil, fmt.Errorf("incorrect account block type")
 	}
 
-	if ledger.IsSendBlock(account.BlockType) {
-		toOp.Amount = zeroAmount
-		ops = append(ops, fromOp, toOp)
-		// only include free if not zero
-		if account.Fee != nil && *account.Fee != "0" {
-			fee := *account.Fee
-			feeOp := &types.Operation{
-				OperationIdentifier: &types.OperationIdentifier{
-					Index: startIndex + int64(len(ops)),
-				},
-				RelatedOperations: []*types.OperationIdentifier{
-					{
-						Index: startIndex,
-					},
-				},
-				Type:   FeeOpType,
-				Status: status,
-				Account: &types.AccountIdentifier{
-					Address: account.FromAddress.Hex(),
-				},
-				Amount: &types.Amount{
-					Value:    "-" + fee,
-					Currency: currency,
-				},
-			}
-			ops = append(ops, feeOp)
-		}
-	} else {
-		fromOp.Amount = zeroAmount
-		ops = append(ops, fromOp, toOp)
+	ops := []*types.Operation{}
 
-		// handle inline send block transactions
-		if account.SendBlockList != nil {
-			for _, sendAccount := range account.SendBlockList {
-				if sendAccount == nil {
-					continue
-				}
-				sOps, err := OperationsForAccountBlock(sendAccount, int64(len(ops)), includeStatus)
-				if err != nil {
-					return nil, err
-				}
-				// Do not substract reward amount from mint address
-				if sendAccount.BlockType == ledger.BlockTypeSendReward {
-					sOps[0].Amount.Value = "0"
-				}
-				ops = append(ops, sOps...)
+	fromOp, err := FromOperationForAccountBlock(accountBlock, 0, includeStatus)
+	if err != nil {
+		return nil, err
+	}
+
+	toOp, err := ToOperationForAccountBlock(accountBlock, 1, includeStatus)
+	if err != nil {
+		return nil, err
+	}
+	toOp.RelatedOperations = []*types.OperationIdentifier{
+		{
+			Index: 0,
+		},
+	}
+	ops = append(ops, fromOp, toOp)
+
+	feeOp, _ := FeeOperationForAccountBlock(accountBlock, 2, includeStatus)
+	if feeOp != nil {
+		ops = append(ops, feeOp)
+	}
+
+	return ops, nil
+}
+
+func OperationsForResponseAccountBlock(accountBlock *api.AccountBlock, includeStatus bool) ([]*types.Operation, error) {
+	if !ledger.IsReceiveBlock(accountBlock.BlockType) {
+		return nil, fmt.Errorf("incorrect account block type")
+	}
+
+	ops := []*types.Operation{}
+
+	toOp, err := ToOperationForAccountBlock(accountBlock, 0, includeStatus)
+	if err != nil {
+		return nil, err
+	}
+
+	ops = append(ops, toOp)
+
+	if accountBlock.SendBlockList != nil {
+		for _, sendAccount := range accountBlock.SendBlockList {
+			if sendAccount == nil {
+				continue
 			}
+			sOp, err := FromOperationForAccountBlock(sendAccount, int64(len(ops)), includeStatus)
+			if err != nil {
+				return nil, err
+			}
+
+			ops = append(ops, sOp)
 		}
 	}
 
 	return ops, nil
 }
 
+func RelatedTransactionsForAccountBlock(accountBlock *api.AccountBlock) []*types.RelatedTransaction {
+	if !ledger.IsReceiveBlock(accountBlock.BlockType) {
+		return nil
+	}
+
+	rts := []*types.RelatedTransaction{
+		{
+			TransactionIdentifier: &types.TransactionIdentifier{
+				Hash: accountBlock.SendBlockHash.Hex(),
+			},
+			Direction: types.Backward,
+		},
+	}
+
+	if accountBlock.SendBlockList != nil {
+		for _, sendAccount := range accountBlock.SendBlockList {
+			if sendAccount == nil {
+				continue
+			}
+			rt := &types.RelatedTransaction{
+				TransactionIdentifier: &types.TransactionIdentifier{
+					Hash: sendAccount.Hash.Hex(),
+				},
+				Direction: types.Forward,
+			}
+			rts = append(rts, rt)
+		}
+	}
+
+	return rts
+}
+
+func OperationsForAccountBlock(accountBlock *api.AccountBlock, includeStatus bool) ([]*types.Operation, error) {
+	if ledger.IsSendBlock(accountBlock.BlockType) {
+		return OperationsForRequestAccountBlock(accountBlock, includeStatus)
+	} else {
+		return OperationsForResponseAccountBlock(accountBlock, includeStatus)
+	}
+}
+
 // Converts a vite account block to a rosetta transaction
 func AccountBlockToTransaction(accountBlock *api.AccountBlock, includeStatus bool) (*types.Transaction, error) {
-	ops, err := OperationsForAccountBlock(accountBlock, 0, includeStatus)
+	ops, err := OperationsForAccountBlock(accountBlock, includeStatus)
 	if err != nil {
 		return nil, err
 	}
 
-	var direction types.Direction
-	var relatedHash *viteTypes.Hash
-	if ledger.IsSendBlock(accountBlock.BlockType) {
-		direction = types.Forward
-		if accountBlock.ReceiveBlockHash != nil {
-			relatedHash = accountBlock.ReceiveBlockHash
-		}
-	} else {
-		direction = types.Backward
-		relatedHash = &accountBlock.SendBlockHash
-	}
-
-	relatedTransactions := []*types.RelatedTransaction{}
-	if relatedHash != nil {
-		rt := &types.RelatedTransaction{
-			TransactionIdentifier: &types.TransactionIdentifier{
-				Hash: relatedHash.Hex(),
-			},
-			Direction: direction,
-		}
-		relatedTransactions = append(relatedTransactions, rt)
-	}
+	relatedTransactions := RelatedTransactionsForAccountBlock(accountBlock)
 
 	publicKey := ed25519.PublicKey(accountBlock.PublicKey)
 
@@ -278,15 +345,12 @@ func AccountBlockToTransaction(accountBlock *api.AccountBlock, includeStatus boo
 			"sendBlockList":       accountBlock.SendBlockList,
 			"fee":                 accountBlock.Fee,
 			"data":                accountBlock.Data,
-			"dificulty":           accountBlock.Difficulty,
+			"difficulty":          accountBlock.Difficulty,
 			"nonce":               accountBlock.Nonce,
 			"signature":           accountBlock.Signature,
 			"quotaUsed":           accountBlock.QuotaUsed,
-			"confirmations":       accountBlock.Confirmations,
 			"firstSnapshotHash":   accountBlock.FirstSnapshotHash,
 			"firstSnapshotHeight": accountBlock.FirstSnapshotHeight,
-			"receiveBlockHeight":  accountBlock.ReceiveBlockHeight,
-			"receiveBlockHash":    accountBlock.ReceiveBlockHash,
 			// timestamp is in miliseconds
 			"timestamp": ConvertSecondsToMiliseconds(accountBlock.Timestamp),
 		},

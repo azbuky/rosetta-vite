@@ -16,31 +16,10 @@ func ConstructionPreprocess(
 	metadata map[string]interface{},
 ) (*ConstructionOptions, []*types.AccountIdentifier, error) {
 
-	matches, matched := MatchRequestOperationType(operations)
-
-	isReceiveType := false
-	if !matched {
-		matches, matched = MatchResponseOperationType(operations)
-		isReceiveType = true
-		if !matched {
-			return nil, nil, fmt.Errorf("failed to match operations")
-		}
-	}
-
-	err := ValidateMatches(matches, nil)
+	description, err := MatchTransaction(operations)
 
 	if err != nil {
 		return nil, nil, err
-	}
-
-	fromOp, _ := matches[0].First()
-	toOp, _ := matches[1].First()
-	account := *fromOp.Account
-	amount := *fromOp.Amount
-
-	if isReceiveType {
-		account = *toOp.Account
-		amount = *toOp.Amount
 	}
 
 	// Defaults to true
@@ -57,85 +36,28 @@ func ConstructionPreprocess(
 		}
 	}
 
-	var data *string
-	dataMeta := metadata["data"]
-	if dataMeta != nil {
-		dataStr := dataMeta.(string)
-		data = &dataStr
-	}
-
 	options := &ConstructionOptions{
-		AccountIdentifier:  account,
-		FromAccount:        *fromOp.Account,
-		ToAccount:          *toOp.Account,
-		Amount:             amount,
-		OperationType:      fromOp.Type,
+		OperationType:      description.OperationType,
+		Account:            description.Account,
+		ToAccount:          description.ToAccount,
+		Amount:             description.Amount,
 		FetchPreviousBlock: fetchPreviousHash,
 		UsePow:             usePow,
-		Data:               data,
+		Data:               description.Data,
 	}
 
 	requiredPublicKeys := []*types.AccountIdentifier{
-		&account,
+		&description.Account,
 	}
 
 	return options, requiredPublicKeys, nil
-}
-
-func (ec *Client) MatchUnreceivedBlock(ctx context.Context, options ConstructionOptions) (string, error) {
-	address, err := viteTypes.HexToAddress(options.AccountIdentifier.Address)
-	if err != nil {
-		return "", err
-	}
-
-	pageSize := uint64(10)
-	for pageIndex := uint64(0); ; pageIndex += 1 {
-		blocks, err := ec.c.GetUnreceivedBlocksByAddress(ctx, address, pageIndex, pageSize)
-		if err != nil {
-			return "", err
-		}
-		for _, block := range blocks {
-			tx, err := AccountBlockToTransaction(block, false)
-			if err != nil {
-				continue
-			}
-			match, matched := MatchRequestTransaction(tx.Operations)
-			if !matched {
-				continue
-			}
-
-			fromValue, err := types.AmountValue(&match.Amount)
-			if err != nil {
-				continue
-			}
-
-			value, err := types.AmountValue(&options.Amount)
-			if err != nil {
-				continue
-			}
-
-			if match.FromAccount.Address == options.FromAccount.Address &&
-				match.ToAccount.Address == options.ToAccount.Address &&
-				match.Amount.Currency.Metadata["tti"] == options.Amount.Currency.Metadata["tti"] &&
-				fromValue != nil && value != nil &&
-				fromValue.CmpAbs(value) == 0 {
-				// found a match
-				return block.Hash.Hex(), nil
-			}
-		}
-
-		// check end of unreceived blocks
-		if uint64(len(blocks)) < pageSize {
-			return "", fmt.Errorf("no match found")
-		}
-	}
 }
 
 func (ec *Client) ConstructionMetadata(
 	ctx context.Context,
 	options *ConstructionOptions,
 ) (*ConstructionMetadata, error) {
-	address, err := viteTypes.HexToAddress(options.AccountIdentifier.Address)
+	address, err := viteTypes.HexToAddress(options.Account.Address)
 	if err != nil {
 		return nil, err
 	}
@@ -145,7 +67,7 @@ func (ec *Client) ConstructionMetadata(
 		return nil, err
 	}
 
-	hash := accountBlock.Hash
+	prevHash := accountBlock.Hash
 	var height uint64 = 0
 	if len(accountBlock.Height) > 0 {
 		height, err = strconv.ParseUint(accountBlock.Height, 10, 64)
@@ -157,14 +79,6 @@ func (ec *Client) ConstructionMetadata(
 	metadata := &ConstructionMetadata{
 		Height:       height,
 		PreviousHash: accountBlock.Hash.Hex(),
-	}
-
-	if IsReceiveTypeOperation(options.OperationType) {
-		sendBlockHash, err := ec.MatchUnreceivedBlock(ctx, *options)
-		if err != nil {
-			return nil, err
-		}
-		metadata.SendBlockHash = &sendBlockHash
 	}
 
 	usePow, err := strconv.ParseBool(options.UsePow)
@@ -181,7 +95,7 @@ func (ec *Client) ConstructionMetadata(
 
 		param := &api.GetPoWDifficultyParam{
 			SelfAddr:  address,
-			PrevHash:  hash,
+			PrevHash:  prevHash,
 			BlockType: blockType,
 			ToAddr:    &toAddress,
 		}
@@ -195,14 +109,16 @@ func (ec *Client) ConstructionMetadata(
 			return nil, err
 		}
 
-		metadata.Difficulty = &result.Difficulty
-		nonceHash := viteTypes.DataHash(append(address.Bytes(), hash.Bytes()...))
-		nonce, err := ec.c.GetPoWNonce(ctx, result.Difficulty, nonceHash.Hex())
-		if err != nil {
-			return nil, err
-		}
+		if len(result.Difficulty) > 0 {
+			nonceHash := viteTypes.DataHash(append(address.Bytes(), prevHash.Bytes()...))
+			nonce, err := ec.c.GetPoWNonce(ctx, result.Difficulty, nonceHash.Hex())
+			if err != nil {
+				return nil, err
+			}
 
-		metadata.Nonce = &nonce
+			metadata.Difficulty = &result.Difficulty
+			metadata.Nonce = &nonce
+		}
 	}
 
 	return metadata, nil
@@ -213,24 +129,9 @@ func CreateAccountBlock(
 	metadata *ConstructionMetadata,
 	publicKey *types.PublicKey,
 ) (*api.AccountBlock, error) {
-	fromAdd := description.FromAccount.Address
-	toAdd := description.ToAccount.Address
-
 	address, err := viteTypes.HexToAddress(description.Account.Address)
 	if err != nil {
 		return nil, fmt.Errorf("%s is not a valid address", description.Account.Address)
-	}
-
-	// Ensure valid from address
-	checkFrom, err := viteTypes.HexToAddress(fromAdd)
-	if err != nil {
-		return nil, fmt.Errorf("%s is not a valid address", fromAdd)
-	}
-
-	// Ensure valid to address
-	checkTo, err := viteTypes.HexToAddress(toAdd)
-	if err != nil {
-		return nil, fmt.Errorf("%s is not a valid address", toAdd)
 	}
 
 	// Ensure valid previous hash
@@ -250,13 +151,29 @@ func CreateAccountBlock(
 		PreviousHash: prevHash,
 		PrevHash:     prevHash,
 		Address:      address,
-		FromAddress:  checkFrom,
-		ToAddress:    checkTo,
 		PublicKey:    publicKey.Bytes,
 	}
 
-	if metadata.Data != nil {
-		accountBlock.Data = []byte(*metadata.Data)
+	if description.FromAccount != nil {
+		fromAdd := description.FromAccount.Address
+		// Ensure valid from address
+		checkFrom, err := viteTypes.HexToAddress(fromAdd)
+		if err != nil {
+			return nil, fmt.Errorf("%s is not a valid address", fromAdd)
+		}
+		accountBlock.FromAddress = checkFrom
+	}
+
+	toAdd := description.ToAccount.Address
+	// Ensure valid to address
+	checkTo, err := viteTypes.HexToAddress(toAdd)
+	if err != nil {
+		return nil, fmt.Errorf("%s is not a valid address", toAdd)
+	}
+	accountBlock.ToAddress = checkTo
+
+	if description.Data != nil {
+		accountBlock.Data = []byte(*description.Data)
 	}
 	if metadata.Difficulty != nil {
 		accountBlock.Difficulty = metadata.Difficulty
@@ -268,7 +185,6 @@ func CreateAccountBlock(
 		}
 	}
 
-	//if IsSendTypeOperation(description.OperationType) {
 	tti := description.Amount.Currency.Metadata["tti"]
 	if tti == nil {
 		return nil, fmt.Errorf("missing token type id")
@@ -284,17 +200,16 @@ func CreateAccountBlock(
 		TokenId:     tokenId,
 	}
 	accountBlock.Amount = &description.Amount.Value
-	//}
+
 	if IsReceiveTypeOperation(description.OperationType) {
-		if metadata.SendBlockHash == nil {
+		if description.SendBlockHash == nil {
 			return nil, fmt.Errorf("missing SendBlockHash")
 		}
-		sendBlockHash, err := viteTypes.HexToHash(*metadata.SendBlockHash)
+		sendBlockHash, err := viteTypes.HexToHash(description.SendBlockHash.Hash)
 		if err != nil {
-			return nil, fmt.Errorf("%s is not a valid hash", *metadata.SendBlockHash)
+			return nil, fmt.Errorf("%s is not a valid hash", description.SendBlockHash.Hash)
 		}
 		accountBlock.SendBlockHash = sendBlockHash
-		accountBlock.FromBlockHash = sendBlockHash
 	}
 
 	if description.Fee != nil {
