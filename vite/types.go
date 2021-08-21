@@ -41,10 +41,15 @@ const (
 	RefundOpType         = "REFUND"
 	GenesisOpType        = "GENESIS"
 	FeeOpType            = "FEE"
+	BurnOpType           = "BURN"
 
 	// SuccessStatus is the status of any
 	// operation considered successful.
 	SuccessStatus string = "SUCCESS"
+
+	// IntentStatus is the status of any
+	// pending operation
+	IntentStatus string = "INTENT"
 
 	RevertedStatus string = "REVERTED"
 
@@ -90,6 +95,7 @@ var (
 		RefundOpType,
 		GenesisOpType,
 		FeeOpType,
+		BurnOpType,
 	}
 
 	// OperationStatuses are all supported operation statuses.
@@ -97,6 +103,10 @@ var (
 		{
 			Status:     SuccessStatus,
 			Successful: true,
+		},
+		{
+			Status:     IntentStatus,
+			Successful: false,
 		},
 		{
 			Status:     RevertedStatus,
