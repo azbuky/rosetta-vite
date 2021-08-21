@@ -33,6 +33,20 @@
             },
             {
                 "account_identifier": {
+                    "address": "vite_30d700502501c5f2052c620333b335ed74fe6ccd4498d4920f"
+                },
+                "privkey": "abe4faf46d985feebf8ffb5d49db4901b497d990f9264173acced6dc55fea1c3",
+                "curve_type": "edwards25519",
+                "currency": {
+                    "symbol": "RST",
+                    "decimals": 8,
+                    "metadata": {
+                        "tti": "tti_2cfd3e160462fb0ac04f6e90"
+                    }
+                }
+            },
+            {
+                "account_identifier": {
                     "address": "vite_5ee5dbac03ce211ff7153a896f01153a0a73f98ae2a3dcfcf7"
                 },
                 "privkey": "fa94200cb55240ec55901805de969e8fc9011178ba8024fd2c7d17c014d2fc67",
@@ -44,18 +58,33 @@
                         "tti": "tti_5649544520544f4b454e6e40"
                     }
                 }
+            },
+            {
+                "account_identifier": {
+                    "address": "vite_5ee5dbac03ce211ff7153a896f01153a0a73f98ae2a3dcfcf7"
+                },
+                "privkey": "fa94200cb55240ec55901805de969e8fc9011178ba8024fd2c7d17c014d2fc67",
+                "curve_type": "edwards25519",
+                "currency": {
+                    "symbol": "RST",
+                    "decimals": 8,
+                    "metadata": {
+                        "tti": "tti_2cfd3e160462fb0ac04f6e90"
+                    }
+                }
             }
         ],
         "broadcast_limit": 1,
         "constructor_dsl_file": "vite.ros",
         "end_conditions": {
-            "transfer_vite": 10
+            "transfer_vite": 10,
+            "transfer_srt": 10
         }
     },
     "data": {
         "active_reconciliation_concurrency": 32,
         "inactive_reconciliation_concurrency": 4,
-        "inactive_reconciliation_frequency": 10008,
+        "inactive_reconciliation_frequency": 1000,
         "log_blocks": true,
         "log_transactions": true,
         "log_balance_changes": true,
