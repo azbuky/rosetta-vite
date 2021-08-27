@@ -10,7 +10,6 @@ transfer_vite(1){
         "currency": {{currency}}
       }
     });
-
     available_amount = {{sender.balance.value}};
     recipient_amount = random_number({"minimum": "1", "maximum": {{max_value}}});
     print_message({"recipient_amount":{{recipient_amount}}});
@@ -32,16 +31,9 @@ transfer_vite(1){
         "amount":{
           "value":{{sender_amount}},
           "currency":{{currency}}
-        }
-      },
-      {
-        "operation_identifier":{"index":1},
-        "related_operations": [{"index": 0}],
-        "type":"RESPONSE",
-        "account":{{recipient.account_identifier}},
-        "amount":{
-          "value":{{recipient_amount}},
-          "currency":{{currency}}
+        },
+        "metadata": {
+          "toAddress": {{recipient.account_identifier.address}}
         }
       }
     ];
@@ -60,7 +52,7 @@ transfer_vite(1){
           "currency":{{currency}}
         },
         "metadata":{ 
-          "sendBlockHash": {{request.transaction.transactionIdentifier.hash}}
+          "sendBlockHash": {{request.transaction.transaction_identifier.hash}}
         }
       }
     ];
@@ -73,7 +65,7 @@ transfer_rst(1){
     request.network = {"network":"testnet", "blockchain":"vite"};
     request.confirmation_depth = "5";
     currency = {"symbol":"RST", "decimals":8, "metadata" : {"tti" : "tti_2cfd3e160462fb0ac04f6e90"}};
-    max_value = "1000000000";
+    max_value = "100000000";
     sender = find_balance({
       "minimum_balance":{
         "value": {{max_value}},
@@ -102,16 +94,9 @@ transfer_rst(1){
         "amount":{
           "value":{{sender_amount}},
           "currency":{{currency}}
-        }
-      },
-      {
-        "operation_identifier":{"index":1},
-        "related_operations": [{"index": 0}],
-        "type":"RESPONSE",
-        "account":{{recipient.account_identifier}},
-        "amount":{
-          "value":{{recipient_amount}},
-          "currency":{{currency}}
+        },
+        "metadata": {
+          "toAddress": {{recipient.account_identifier.address}}
         }
       }
     ];
@@ -130,7 +115,7 @@ transfer_rst(1){
           "currency":{{currency}}
         },
         "metadata":{
-          "sendBlockHash": {{request.transaction.transactionIdentifier.hash}}
+          "sendBlockHash": {{request.transaction.transaction_identifier.hash}}
         }
       }
     ];
