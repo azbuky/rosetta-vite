@@ -72,6 +72,34 @@
                         "tti": "tti_2cfd3e160462fb0ac04f6e90"
                     }
                 }
+            },
+            {
+                "account_identifier": {
+                    "address": "vite_23513d0a7443e2d13c4818972d1d84ae3e61686552aeb04c59"
+                },
+                "privkey": "c0278ca36945c2e5c40dc99d86bced257addc73283206eb88cffca31934e4ecd",
+                "curve_type": "edwards25519",
+                "currency": {
+                    "symbol": "VITE",
+                    "decimals": 18,
+                    "metadata": {
+                        "tti": "tti_5649544520544f4b454e6e40"
+                    }
+                }
+            },
+            {
+                "account_identifier": {
+                    "address": "vite_23513d0a7443e2d13c4818972d1d84ae3e61686552aeb04c59"
+                },
+                "privkey": "c0278ca36945c2e5c40dc99d86bced257addc73283206eb88cffca31934e4ecd",
+                "curve_type": "edwards25519",
+                "currency": {
+                    "symbol": "RST",
+                    "decimals": 8,
+                    "metadata": {
+                        "tti": "tti_2cfd3e160462fb0ac04f6e90"
+                    }
+                }
             }
         ],
         "broadcast_limit": 1,
