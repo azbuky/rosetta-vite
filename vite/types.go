@@ -156,3 +156,15 @@ type TransactionDescription struct {
 	Fee    *types.Amount
 	Data   *string
 }
+
+// Defines Request Operation metadata
+type RequestOperationMetadata struct {
+	ToAddress string `json:"toAddress"`
+	Data      []byte `json:"data,omitempty"`
+}
+
+// Defines Response Operation Metadata
+type ResponseOperationMetadata struct {
+	SendBlockHash string `json:"sendBlockHash"`
+	Data          []byte `json:"data,omitempty"`
+}
