@@ -105,8 +105,8 @@
         "broadcast_limit": 1,
         "constructor_dsl_file": "vite.ros",
         "end_conditions": {
-            "transfer_vite": 10,
-            "transfer_srt": 10
+            "transfer_vite": 5,
+            "transfer_rst": 5
         }
     },
     "data": {
