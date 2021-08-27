@@ -63,7 +63,7 @@ const (
 	DefaultGviteURL = "http://localhost:48132/"
 
 	// MiddlewareVersion is the version of rosetta-vite.
-	MiddlewareVersion = "0.1.0"
+	MiddlewareVersion = "0.2.0"
 )
 
 // Configuration determines how

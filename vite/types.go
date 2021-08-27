@@ -41,14 +41,22 @@ const (
 	RefundOpType         = "REFUND"
 	GenesisOpType        = "GENESIS"
 	FeeOpType            = "FEE"
+	BurnOpType           = "BURN"
 
 	// SuccessStatus is the status of any
 	// operation considered successful.
 	SuccessStatus string = "SUCCESS"
 
+	// IntentStatus is the status of any
+	// pending operation
+	IntentStatus string = "INTENT"
+
 	RevertedStatus string = "REVERTED"
 
 	ExceedMaxDepthStatus string = "EXCEED_MAX_DEPTH"
+
+	// Known addresses
+	MintAddress string = "vite_000000000000000000000000000000000000000595292d996d"
 
 	// HistoricalBalanceSupported is whether
 	// historical balance is supported.
@@ -67,6 +75,9 @@ const (
 	// InlineTransactions - weather to return transactions inline in the block or
 	// as otherTransactions
 	InlineTransactions = true
+
+	MetadataToAddressKey     string = "toAddress"
+	MetadataSendBlockHashKey string = "sendBlockHash"
 )
 
 var (
@@ -90,6 +101,7 @@ var (
 		RefundOpType,
 		GenesisOpType,
 		FeeOpType,
+		BurnOpType,
 	}
 
 	// OperationStatuses are all supported operation statuses.
@@ -114,33 +126,44 @@ var (
 
 // Defines construction preprocess options
 type ConstructionOptions struct {
-	AccountIdentifier  types.AccountIdentifier `json:"account_identifier"`
-	FromAccount        types.AccountIdentifier `json:"from_account"`
-	ToAccount          types.AccountIdentifier `json:"to_account"`
 	OperationType      string                  `json:"operation_type"`
+	Account            types.AccountIdentifier `json:"account_identifier"`
+	ToAccount          types.AccountIdentifier `json:"to_account"`
 	Amount             types.Amount            `json:"amount"`
 	FetchPreviousBlock string                  `json:"fetch_previous_block"`
 	UsePow             string                  `json:"use_pow"`
-	Data               *string                 `json:"data,omitempty"`
+	Data               []byte                  `json:"data,omitempty"`
 }
 
 // Defines construction metadata
 type ConstructionMetadata struct {
-	Height        uint64  `json:"height"`
-	PreviousHash  string  `json:"previousHash"`
-	Difficulty    *string `json:"difficulty,omitempty"`
-	Nonce         *string `json:"nonce,omitempty"`
-	SendBlockHash *string `json:"sendBlockHash,omitempty"`
-	Data          *string `json:"data,omitempty"`
+	Height       uint64  `json:"height"`
+	PreviousHash string  `json:"previousHash"`
+	Difficulty   *string `json:"difficulty,omitempty"`
+	Nonce        *string `json:"nonce,omitempty"`
 }
 
 // Defines transaction description from matched operations
 type TransactionDescription struct {
 	OperationType string
 	Account       types.AccountIdentifier
-	FromAccount   types.AccountIdentifier
+	FromAccount   *types.AccountIdentifier
 	ToAccount     types.AccountIdentifier
-	// Amount should always be positive
+	SendBlockHash *types.TransactionIdentifier
+	// Amount & Fee should always be positive
 	Amount types.Amount
 	Fee    *types.Amount
+	Data   []byte
+}
+
+// Defines Request Operation metadata
+type RequestOperationMetadata struct {
+	ToAddress string `json:"toAddress"`
+	Data      []byte `json:"data,omitempty"`
+}
+
+// Defines Response Operation Metadata
+type ResponseOperationMetadata struct {
+	SendBlockHash string `json:"sendBlockHash"`
+	Data          []byte `json:"data,omitempty"`
 }

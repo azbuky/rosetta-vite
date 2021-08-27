@@ -1,17 +1,17 @@
-transfer_vite(10){
+transfer_vite(1){
   request{
     request.network = {"network":"testnet", "blockchain":"vite"};
     request.confirmation_depth = "5";
     currency = {"symbol":"VITE", "decimals":18, "metadata" : {"tti" : "tti_5649544520544f4b454e6e40"}};
+    max_value = "10000000000000000000";
     sender = find_balance({
       "minimum_balance":{
-        "value": "1000000000000000000",
+        "value": {{max_value}},
         "currency": {{currency}}
       }
     });
-
     available_amount = {{sender.balance.value}};
-    recipient_amount = "1000000000000000000";
+    recipient_amount = random_number({"minimum": "1", "maximum": {{max_value}}});
     print_message({"recipient_amount":{{recipient_amount}}});
 
     // Find recipient and construct operations
@@ -31,15 +31,9 @@ transfer_vite(10){
         "amount":{
           "value":{{sender_amount}},
           "currency":{{currency}}
-        }
-      },
-      {
-        "operation_identifier":{"index":1},
-        "type":"REQUEST",
-        "account":{{recipient.account_identifier}},
-        "amount":{
-          "value":"0",
-          "currency":{{currency}}
+        },
+        "metadata": {
+          "toAddress": {{recipient.account_identifier.address}}
         }
       }
     ];
@@ -52,19 +46,76 @@ transfer_vite(10){
       {
         "operation_identifier":{"index":0},
         "type":"RESPONSE",
+        "account":{{recipient.account_identifier}},
+        "amount":{
+          "value":{{recipient_amount}},
+          "currency":{{currency}}
+        },
+        "metadata":{ 
+          "sendBlockHash": {{request.transaction.transaction_identifier.hash}}
+        }
+      }
+    ];
+    response.preprocess_metadata = {"use_pow": "true"};
+  }
+}
+
+transfer_rst(1){
+  request{
+    request.network = {"network":"testnet", "blockchain":"vite"};
+    request.confirmation_depth = "5";
+    currency = {"symbol":"RST", "decimals":8, "metadata" : {"tti" : "tti_2cfd3e160462fb0ac04f6e90"}};
+    max_value = "100000000";
+    sender = find_balance({
+      "minimum_balance":{
+        "value": {{max_value}},
+        "currency": {{currency}}
+      }
+    });
+
+    available_amount = {{sender.balance.value}};
+    recipient_amount = random_number({"minimum": "1", "maximum": {{max_value}}});
+    print_message({"recipient_amount":{{recipient_amount}}});
+
+    // Find recipient and construct operations
+    sender_amount = 0 - {{recipient_amount}};
+    recipient = find_balance({
+      "not_account_identifier":[{{sender.account_identifier}}],
+      "minimum_balance":{
+        "value": "0",
+        "currency": {{currency}}
+      }
+    });
+    request.operations = [
+      {
+        "operation_identifier":{"index":0},
+        "type":"REQUEST",
         "account":{{sender.account_identifier}},
         "amount":{
-          "value":"0",
+          "value":{{sender_amount}},
           "currency":{{currency}}
+        },
+        "metadata": {
+          "toAddress": {{recipient.account_identifier.address}}
         }
-      },
+      }
+    ];
+    request.preprocess_metadata = {"use_pow": "true"};
+  },
+  response{
+    response.network = {"network":"testnet", "blockchain":"vite"};
+    response.confirmation_depth = "5";
+    response.operations = [
       {
-        "operation_identifier":{"index":1},
+        "operation_identifier":{"index":0},
         "type":"RESPONSE",
         "account":{{recipient.account_identifier}},
         "amount":{
           "value":{{recipient_amount}},
           "currency":{{currency}}
+        },
+        "metadata":{
+          "sendBlockHash": {{request.transaction.transaction_identifier.hash}}
         }
       }
     ];
