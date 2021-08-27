@@ -1,4 +1,4 @@
-package services
+package utils
 
 import (
 	"encoding/base64"
@@ -10,8 +10,8 @@ import (
 // *JSONMap functions are needed because `types.MarshalMap/types.UnmarshalMap`
 // does not respect custom JSON marshalers.
 
-// marshalJSONMap converts an interface into a map[string]interface{}.
-func marshalJSONMap(i interface{}) (map[string]interface{}, error) {
+// MarshalJSONMap converts an interface into a map[string]interface{}.
+func MarshalJSONMap(i interface{}) (map[string]interface{}, error) {
 	b, err := json.Marshal(i)
 	if err != nil {
 		return nil, err
@@ -25,8 +25,8 @@ func marshalJSONMap(i interface{}) (map[string]interface{}, error) {
 	return m, nil
 }
 
-// unmarshalJSONMap converts map[string]interface{} into a interface{}.
-func unmarshalJSONMap(m map[string]interface{}, i interface{}) error {
+// UnmarshalJSONMap converts map[string]interface{} into a interface{}.
+func UnmarshalJSONMap(m map[string]interface{}, i interface{}) error {
 	b, err := json.Marshal(m)
 	if err != nil {
 		return err
@@ -36,7 +36,7 @@ func unmarshalJSONMap(m map[string]interface{}, i interface{}) error {
 }
 
 // Decodes an account block from a base64 encoded string
-func decodeAccountBlockFromBase64(data string) (*api.AccountBlock, error) {
+func DecodeAccountBlockFromBase64(data string) (*api.AccountBlock, error) {
 	var accountBlock api.AccountBlock
 	jsonData, err := base64.StdEncoding.DecodeString(data)
 	if err != nil {
@@ -49,7 +49,7 @@ func decodeAccountBlockFromBase64(data string) (*api.AccountBlock, error) {
 }
 
 // Encodes an account block to a base64 string
-func encodeAccountBlockToBase64(accountBlock api.AccountBlock) (string, error) {
+func EncodeAccountBlockToBase64(accountBlock api.AccountBlock) (string, error) {
 	jsonData, err := json.Marshal(accountBlock)
 	if err != nil {
 		return "", err

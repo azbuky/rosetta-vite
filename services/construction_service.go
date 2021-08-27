@@ -5,7 +5,9 @@ import (
 	"fmt"
 
 	"github.com/azbuky/rosetta-vite/configuration"
+	"github.com/azbuky/rosetta-vite/utils"
 	"github.com/azbuky/rosetta-vite/vite"
+
 	"github.com/coinbase/rosetta-sdk-go/types"
 
 	viteTypes "github.com/vitelabs/go-vite/common/types"
@@ -55,7 +57,7 @@ func (s *ConstructionAPIService) ConstructionPreprocess(
 		return nil, wrapErr(ErrUnableToParseIntermediateResult, err)
 	}
 
-	marshaledOptions, err := marshalJSONMap(options)
+	marshaledOptions, err := utils.MarshalJSONMap(options)
 	if err != nil {
 		return nil, wrapErr(ErrUnableToParseIntermediateResult, err)
 	}
@@ -76,7 +78,7 @@ func (s *ConstructionAPIService) ConstructionMetadata(
 	}
 
 	var options vite.ConstructionOptions
-	if err := unmarshalJSONMap(request.Options, &options); err != nil {
+	if err := utils.UnmarshalJSONMap(request.Options, &options); err != nil {
 		return nil, wrapErr(ErrUnableToParseIntermediateResult, err)
 	}
 
@@ -85,7 +87,7 @@ func (s *ConstructionAPIService) ConstructionMetadata(
 		return nil, wrapErr(ErrUnableToParseIntermediateResult, err)
 	}
 
-	metadataMap, err := marshalJSONMap(metadata)
+	metadataMap, err := utils.MarshalJSONMap(metadata)
 	if err != nil {
 		return nil, wrapErr(ErrUnableToParseIntermediateResult, err)
 	}
@@ -103,7 +105,7 @@ func (s *ConstructionAPIService) ConstructionPayloads(
 
 	// Convert map to Metadata struct
 	metadata := &vite.ConstructionMetadata{}
-	if err := unmarshalJSONMap(request.Metadata, metadata); err != nil {
+	if err := utils.UnmarshalJSONMap(request.Metadata, metadata); err != nil {
 		return nil, wrapErr(ErrUnableToParseIntermediateResult, err)
 	}
 
@@ -133,7 +135,7 @@ func (s *ConstructionAPIService) ConstructionPayloads(
 		SignatureType:     types.Ed25519,
 	}
 
-	unsignedTransaction, err := encodeAccountBlockToBase64(*accountBlock)
+	unsignedTransaction, err := utils.EncodeAccountBlockToBase64(*accountBlock)
 	if err != nil {
 		return nil, wrapErr(ErrUnableToParseIntermediateResult, err)
 	}
@@ -150,7 +152,7 @@ func (s *ConstructionAPIService) ConstructionCombine(
 	ctx context.Context,
 	request *types.ConstructionCombineRequest,
 ) (*types.ConstructionCombineResponse, *types.Error) {
-	accountBlock, err := decodeAccountBlockFromBase64(request.UnsignedTransaction)
+	accountBlock, err := utils.DecodeAccountBlockFromBase64(request.UnsignedTransaction)
 	if err != nil {
 		return nil, wrapErr(ErrUnableToParseIntermediateResult, err)
 	}
@@ -174,7 +176,7 @@ func (s *ConstructionAPIService) ConstructionCombine(
 	accountBlock.PublicKey = signature.PublicKey.Bytes
 	accountBlock.Hash = *hash
 
-	signedTransaction, err := encodeAccountBlockToBase64(*accountBlock)
+	signedTransaction, err := utils.EncodeAccountBlockToBase64(*accountBlock)
 	if err != nil {
 		return nil, wrapErr(ErrUnableToParseIntermediateResult, err)
 	}
@@ -189,7 +191,7 @@ func (s *ConstructionAPIService) ConstructionHash(
 	ctx context.Context,
 	request *types.ConstructionHashRequest,
 ) (*types.TransactionIdentifierResponse, *types.Error) {
-	accountBlock, err := decodeAccountBlockFromBase64(request.SignedTransaction)
+	accountBlock, err := utils.DecodeAccountBlockFromBase64(request.SignedTransaction)
 	if err != nil {
 		return nil, wrapErr(ErrUnableToParseIntermediateResult, err)
 	}
@@ -209,7 +211,7 @@ func (s *ConstructionAPIService) ConstructionParse(
 	request *types.ConstructionParseRequest,
 ) (*types.ConstructionParseResponse, *types.Error) {
 
-	accountBlock, err := decodeAccountBlockFromBase64(request.Transaction)
+	accountBlock, err := utils.DecodeAccountBlockFromBase64(request.Transaction)
 	if err != nil {
 		return nil, wrapErr(ErrUnableToParseIntermediateResult, err)
 	}
@@ -255,7 +257,7 @@ func (s *ConstructionAPIService) ConstructionSubmit(
 		return nil, ErrUnavailableOffline
 	}
 
-	accountBlock, err := decodeAccountBlockFromBase64(request.SignedTransaction)
+	accountBlock, err := utils.DecodeAccountBlockFromBase64(request.SignedTransaction)
 	if err != nil {
 		return nil, wrapErr(ErrUnableToParseIntermediateResult, err)
 	}
