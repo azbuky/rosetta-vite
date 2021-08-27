@@ -75,6 +75,9 @@ const (
 	// InlineTransactions - weather to return transactions inline in the block or
 	// as otherTransactions
 	InlineTransactions = true
+
+	MetadataToAddressKey     string = "toAddress"
+	MetadataSendBlockHashKey string = "sendBlockHash"
 )
 
 var (
@@ -108,10 +111,6 @@ var (
 			Successful: true,
 		},
 		{
-			Status:     IntentStatus,
-			Successful: false,
-		},
-		{
 			Status:     RevertedStatus,
 			Successful: false,
 		},
@@ -133,7 +132,7 @@ type ConstructionOptions struct {
 	Amount             types.Amount            `json:"amount"`
 	FetchPreviousBlock string                  `json:"fetch_previous_block"`
 	UsePow             string                  `json:"use_pow"`
-	Data               *string                 `json:"data,omitempty"`
+	Data               []byte                  `json:"data,omitempty"`
 }
 
 // Defines construction metadata
@@ -154,7 +153,7 @@ type TransactionDescription struct {
 	// Amount & Fee should always be positive
 	Amount types.Amount
 	Fee    *types.Amount
-	Data   *string
+	Data   []byte
 }
 
 // Defines Request Operation metadata

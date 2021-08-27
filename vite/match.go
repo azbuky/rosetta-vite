@@ -4,13 +4,11 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/azbuky/rosetta-vite/utils"
 	"github.com/coinbase/rosetta-sdk-go/parser"
 	"github.com/coinbase/rosetta-sdk-go/types"
 	viteTypes "github.com/vitelabs/go-vite/common/types"
 )
-
-const SendBlockHashKey string = "sendBlockHash"
-const DataKey string = "data"
 
 func MatchTransaction(operations []*types.Operation) (*TransactionDescription, error) {
 	if len(operations) == 0 {
@@ -31,18 +29,13 @@ func MatchTransaction(operations []*types.Operation) (*TransactionDescription, e
 }
 
 func MatchRequestTransaction(operations []*types.Operation) (*TransactionDescription, error) {
-	if len(operations) != 2 {
+	if len(operations) != 1 {
 		return nil, fmt.Errorf("incorrect number of ops")
 	}
 
 	reqOp := operations[0]
-	respOp := operations[1]
 
 	if err := CheckRequestOpType(reqOp); err != nil {
-		return nil, err
-	}
-
-	if err := CheckResponseOpType(respOp, false); err != nil {
 		return nil, err
 	}
 
@@ -54,20 +47,23 @@ func MatchRequestTransaction(operations []*types.Operation) (*TransactionDescrip
 	}
 	amount.Value = value
 
-	// check for data field
-	var data *string
-	dataField, ok := reqOp.Metadata[DataKey].(string)
-	if ok {
-		data = &dataField
+	metadata := RequestOperationMetadata{}
+	err = utils.UnmarshalJSONMap(reqOp.Metadata, &metadata)
+	if err != nil {
+		return nil, err
+	}
+
+	toAccount := types.AccountIdentifier{
+		Address: metadata.ToAddress,
 	}
 
 	transaction := &TransactionDescription{
 		OperationType: RequestOpType,
 		Account:       *reqOp.Account,
 		FromAccount:   reqOp.Account,
-		ToAccount:     *respOp.Account,
+		ToAccount:     toAccount,
 		Amount:        amount,
-		Data:          data,
+		Data:          metadata.Data,
 	}
 	return transaction, nil
 }
@@ -83,15 +79,13 @@ func MatchResponseTransaction(operations []*types.Operation) (*TransactionDescri
 		return nil, err
 	}
 
-	// check for data field
-	var data *string
-	dataField, ok := respOp.Metadata[DataKey].(string)
-	if ok {
-		data = &dataField
+	metadata := ResponseOperationMetadata{}
+	if err := utils.UnmarshalJSONMap(respOp.Metadata, &metadata); err != nil {
+		return nil, err
 	}
 
 	sendBlockHash := &types.TransactionIdentifier{
-		Hash: respOp.Metadata[SendBlockHashKey].(string),
+		Hash: metadata.SendBlockHash,
 	}
 
 	transaction := &TransactionDescription{
@@ -100,7 +94,7 @@ func MatchResponseTransaction(operations []*types.Operation) (*TransactionDescri
 		ToAccount:     *respOp.Account,
 		Amount:        *respOp.Amount,
 		SendBlockHash: sendBlockHash,
-		Data:          data,
+		Data:          metadata.Data,
 	}
 
 	return transaction, nil
@@ -117,6 +111,12 @@ func CheckRequestOpType(operation *types.Operation) error {
 				Amount: &parser.AmountDescription{
 					Exists: true,
 					Sign:   parser.NegativeOrZeroAmountSign,
+				},
+				Metadata: []*parser.MetadataDescription{
+					{
+						Key:       MetadataToAddressKey,
+						ValueKind: reflect.String,
+					},
 				},
 			},
 		},
@@ -140,7 +140,7 @@ func CheckResponseOpType(operation *types.Operation, inResponseTx bool) error {
 	if inResponseTx {
 		metadata = []*parser.MetadataDescription{
 			{
-				Key:       SendBlockHashKey,
+				Key:       MetadataSendBlockHashKey,
 				ValueKind: reflect.String,
 			},
 		}

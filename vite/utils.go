@@ -4,6 +4,7 @@ import (
 	"crypto/ed25519"
 	"fmt"
 
+	"github.com/azbuky/rosetta-vite/utils"
 	"github.com/coinbase/rosetta-sdk-go/types"
 	"github.com/vitelabs/go-vite/ledger"
 	"github.com/vitelabs/go-vite/rpcapi/api"
@@ -138,7 +139,7 @@ func StatusRef(status string, includeStatus bool) *string {
 	return &status
 }
 
-func FromOperationForAccountBlock(accountBlock *api.AccountBlock, index int64, includeStatus bool) (*types.Operation, error) {
+func RequestOperationForAccountBlock(accountBlock *api.AccountBlock, index int64, includeStatus bool) (*types.Operation, error) {
 	if !ledger.IsSendBlock(accountBlock.BlockType) {
 		return nil, fmt.Errorf("incorrect account block type")
 	}
@@ -153,6 +154,14 @@ func FromOperationForAccountBlock(accountBlock *api.AccountBlock, index int64, i
 		amount = nil
 	}
 
+	metadata, err := utils.MarshalJSONMap(RequestOperationMetadata{
+		ToAddress: accountBlock.ToAddress.Hex(),
+		Data:      accountBlock.Data,
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	return &types.Operation{
 		OperationIdentifier: &types.OperationIdentifier{
 			Index: index,
@@ -162,23 +171,35 @@ func FromOperationForAccountBlock(accountBlock *api.AccountBlock, index int64, i
 		Account: &types.AccountIdentifier{
 			Address: accountBlock.FromAddress.Hex(),
 		},
-		Amount: amount,
+		Amount:   amount,
+		Metadata: metadata,
 	}, nil
 }
 
-func ToOperationForAccountBlock(accountBlock *api.AccountBlock, index int64, includeStatus bool) (*types.Operation, error) {
-	opType := ResponseOpType
+func ResponseOperationForAccountBlock(accountBlock *api.AccountBlock, index int64, includeStatus bool) (*types.Operation, error) {
+	if !ledger.IsReceiveBlock(accountBlock.BlockType) {
+		return nil, fmt.Errorf("incorrect account block type")
+	}
+	opType, err := BlockTypeToOperationType(accountBlock.BlockType)
+	if err != nil {
+		return nil, err
+	}
 
 	amount := AmountForAccountBlock(accountBlock, false)
 
-	if accountBlock.ToAddress.Hex() == MintAddress {
+	if accountBlock.ToAddress.Hex() == MintAddress && amount.Value != "0" {
 		opType = BurnOpType
 		amount = nil
 	}
 
 	status := StatusRef(SuccessStatus, includeStatus)
-	if ledger.IsSendBlock(accountBlock.BlockType) {
-		status = StatusRef(IntentStatus, includeStatus)
+
+	metadata, err := utils.MarshalJSONMap(ResponseOperationMetadata{
+		SendBlockHash: accountBlock.SendBlockHash.Hex(),
+		Data:          accountBlock.Data,
+	})
+	if err != nil {
+		return nil, err
 	}
 
 	return &types.Operation{
@@ -190,7 +211,8 @@ func ToOperationForAccountBlock(accountBlock *api.AccountBlock, index int64, inc
 		Account: &types.AccountIdentifier{
 			Address: accountBlock.ToAddress.Hex(),
 		},
-		Amount: amount,
+		Amount:   amount,
+		Metadata: metadata,
 	}, nil
 }
 
@@ -220,23 +242,14 @@ func OperationsForRequestAccountBlock(accountBlock *api.AccountBlock, includeSta
 
 	ops := []*types.Operation{}
 
-	fromOp, err := FromOperationForAccountBlock(accountBlock, 0, includeStatus)
+	requestOp, err := RequestOperationForAccountBlock(accountBlock, 0, includeStatus)
 	if err != nil {
 		return nil, err
 	}
 
-	toOp, err := ToOperationForAccountBlock(accountBlock, 1, includeStatus)
-	if err != nil {
-		return nil, err
-	}
-	toOp.RelatedOperations = []*types.OperationIdentifier{
-		{
-			Index: 0,
-		},
-	}
-	ops = append(ops, fromOp, toOp)
+	ops = append(ops, requestOp)
 
-	feeOp, _ := FeeOperationForAccountBlock(accountBlock, 2, includeStatus)
+	feeOp, _ := FeeOperationForAccountBlock(accountBlock, int64(len(ops)), includeStatus)
 	if feeOp != nil {
 		ops = append(ops, feeOp)
 	}
@@ -251,19 +264,19 @@ func OperationsForResponseAccountBlock(accountBlock *api.AccountBlock, includeSt
 
 	ops := []*types.Operation{}
 
-	toOp, err := ToOperationForAccountBlock(accountBlock, 0, includeStatus)
+	responseOp, err := ResponseOperationForAccountBlock(accountBlock, 0, includeStatus)
 	if err != nil {
 		return nil, err
 	}
 
-	ops = append(ops, toOp)
+	ops = append(ops, responseOp)
 
 	if accountBlock.SendBlockList != nil {
 		for _, sendAccount := range accountBlock.SendBlockList {
 			if sendAccount == nil {
 				continue
 			}
-			sOp, err := FromOperationForAccountBlock(sendAccount, int64(len(ops)), includeStatus)
+			sOp, err := RequestOperationForAccountBlock(sendAccount, int64(len(ops)), includeStatus)
 			if err != nil {
 				return nil, err
 			}

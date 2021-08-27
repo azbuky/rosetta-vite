@@ -27,9 +27,8 @@ func ConstructionPreprocess(
 
 	// Defaults to false
 	usePow := strconv.FormatBool(false)
-	usePowMeta := metadata["use_pow"]
-	if usePowMeta != nil {
-		usePowStr := usePowMeta.(string)
+	usePowStr, ok := metadata["use_pow"].(string)
+	if ok {
 		usePowBool, err := strconv.ParseBool(usePowStr)
 		if err == nil {
 			usePow = strconv.FormatBool(usePowBool)
@@ -98,11 +97,12 @@ func (ec *Client) ConstructionMetadata(
 			PrevHash:  prevHash,
 			BlockType: blockType,
 			ToAddr:    &toAddress,
+			Data:      options.Data,
 		}
 
-		if options.Data != nil {
-			param.Data = []byte(*options.Data)
-		}
+		// if options.Data != nil {
+		// 	param.Data = options.Data
+		// }
 
 		result, err := ec.c.GetPoWDifficulty(ctx, param)
 		if err != nil {
@@ -152,6 +152,7 @@ func CreateAccountBlock(
 		PrevHash:     prevHash,
 		Address:      address,
 		PublicKey:    publicKey.Bytes,
+		Data:         description.Data,
 	}
 
 	if description.FromAccount != nil {
@@ -172,9 +173,10 @@ func CreateAccountBlock(
 	}
 	accountBlock.ToAddress = checkTo
 
-	if description.Data != nil {
-		accountBlock.Data = []byte(*description.Data)
-	}
+	// if description.Data != nil {
+	// 	accountBlock.Data = []byte(*description.Data)
+	// }
+
 	if metadata.Difficulty != nil {
 		accountBlock.Difficulty = metadata.Difficulty
 	}
